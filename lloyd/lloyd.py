@@ -8,7 +8,7 @@ class Field():
   see: https://en.wikipedia.org/wiki/Lloyd%27s_algorithm
   '''
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, *args, calc_domains=False, **kwargs):
     '''
     Store the points and bounding box of the points to which
     Lloyd relaxation will be applied.
@@ -21,8 +21,35 @@ class Field():
     if not isinstance(arr, np.ndarray) or arr.shape[1] != 2:
       raise Exception('Please provide a numpy array with shape n,2')
     self.points = arr
-    # find the bounding box of the input data
-    self.domains = self.get_domains(arr)
+    if calc_domains:
+      # find the bounding box of the input data
+      self.domains = self.get_domains(arr)
+      self.len = len(self.points)
+    else:
+      self.domains = {
+        'x': {
+          'min': 0,
+          'max': 1,
+        },
+        'y': {
+          'min': 0,
+          'max': 1,
+        }
+      }
+      added_points = np.array([
+          [0, 0], [0, 1], [1, 0], [1, 1],
+          #[0, 0.333], [0, 0.667], [0.333, 0], [0.667, 0], [1, 0.333], [1, 0.667], [0.333, 1], [0.667, 1]
+          [0, 0.5],
+          [0.5, 0],
+          [1, 0.5],
+          [0.5, 1]
+        ])
+      if len(added_points):
+        self.points = np.concatenate([
+          self.points, added_points
+        ])
+        self.len = len(self.points) - len(added_points)
+
     # ensure no two points have the exact same coords
     self.jitter_points()
     self.bb_points = self.get_bb_points(arr)
@@ -110,7 +137,7 @@ class Field():
     '''
     Return a boolean indicating whether self.points contains duplicates
     '''
-    vals, count = np.unique(self.points, return_counts=True)
+    vals, count = np.unique(self.points, axis=0, return_counts=True)
     return np.any(vals[count > 1])
 
 
@@ -165,7 +192,7 @@ class Field():
       verts = self.voronoi.vertices[region]
       # find the centroid of those vertices
       centroids.append(self.find_centroid(verts))
-    self.points = np.array(centroids)
+    self.points[:self.len] = np.array(centroids)[:self.len]
     self.constrain_points()
     self.jitter_points()
     self.build_voronoi()
