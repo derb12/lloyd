@@ -39,16 +39,16 @@ class Field():
       added_points = np.array([
           [0, 0], [0, 1], [1, 0], [1, 1],
           #[0, 0.333], [0, 0.667], [0.333, 0], [0.667, 0], [1, 0.333], [1, 0.667], [0.333, 1], [0.667, 1]
-          [0, 0.5],
-          [0.5, 0],
-          [1, 0.5],
-          [0.5, 1]
+          [0, 0.5], [1, 0.5],
+          [0.5, 0], [0.5, 1]
         ])
       if len(added_points):
         self.points = np.concatenate([
           self.points, added_points
         ])
         self.len = len(self.points) - len(added_points)
+      else:
+        self.len = len(self.points)
 
     # ensure no two points have the exact same coords
     self.jitter_points()
@@ -117,8 +117,7 @@ class Field():
       reference/generated/scipy.spatial.Voronoi.html
     '''
     # build the voronoi tessellation map
-    self.voronoi = Voronoi(self.points, qhull_options='Qbb Qc Qx')
-
+    self.voronoi = Voronoi(self.points)
     # constrain voronoi vertices within bounding box
     if self.constrain:
       for idx, vertex in enumerate(self.voronoi.vertices):
